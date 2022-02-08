@@ -1,10 +1,10 @@
 """
 Module to get data from coinSpot ReadOnly API
 """
+
 import json
-from operator import ne
-from pickle import DICT
 from typing import Dict
+from unittest import result
 from secret import api_key, api_secret
 import aiohttp
 import asyncio
@@ -23,36 +23,52 @@ class CoinSpotReq:
 
     NONCE = count(int(time.time()*1000))
     
-    def __init__(self, url : str, payload = {}) -> None:
+    def __init__(self, url : str, post_processor = None, payload = {}):
         payload['nonce'] = next(self.NONCE)
         payload = json.dumps(payload, separators=(',',':'))
         self.payload = payload
         self.url = url
         self.sign = hmac.new(api_secret, self.payload.encode('utf-8'), hashlib.sha512).hexdigest()
         self.headers = {'key' : api_key, 'sign' : self.sign, 'Content-type' : 'application/json'}
+        self.post_processor = (post_processor if post_processor != None else no_process)
 
-async def access_coin_spot() -> Dict:
+def process_balance(data : Dict, result : Dict) -> Dict:
+    total_balance = 0
+    coins_held = {}
+    for crypto_coin in data['balances'] :
+        coin = list(crypto_coin.keys())[0]
+        coin_balance = crypto_coin[coin]['audbalance']
+        total_balance += coin_balance
+        coin_held = crypto_coin[coin]['balance']
+        coins_held[coin] = coin_held
+    
+    result['total_balance'] = total_balance
+    result['coins_held'] = coins_held
+
+    return result
+
+def no_process(data, result):
+    pass
+
+def generate_coin_spot_reqs() -> list:
+    return [CoinSpotReq(BASE_URL + BALANCE_URL, process_balance), CoinSpotReq(BASE_URL + DEPOSIT_HIST_URL), CoinSpotReq(BASE_URL + WITHDRAW_HIST_URL)]
+
+async def main() -> dict:
+
+    coin_spot_reqs = generate_coin_spot_reqs()
+    result = {}
 
     async with aiohttp.ClientSession() as session:
+        for coin_spot_req in coin_spot_reqs:
+            async with session.post(coin_spot_req.url, data=coin_spot_req.payload, headers=coin_spot_req.headers) as response:
+                data = await response.json()
+                coin_spot_req.post_processor(data, result)
 
-        req_model = CoinSpotReq(url=BASE_URL + BALANCE_URL)
-        async with session.post(req_model.url, data=req_model.payload, headers=req_model.headers) as response:
-            data = await response.json()
-            print(data)
-
-        req_model = CoinSpotReq(url=BASE_URL + DEPOSIT_HIST_URL)
-        async with session.post(req_model.url, data=req_model.payload, headers=req_model.headers) as response:
-            data = await response.json()
-            print(data)
-
-        req_model = CoinSpotReq(url=BASE_URL + WITHDRAW_HIST_URL)
-        async with session.post(req_model.url, data=req_model.payload, headers=req_model.headers) as response:
-            data = await response.text()
-            print(data)
+    return result
 
 def get_coin_spot_data():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(access_coin_spot())
+    result = asyncio.get_event_loop().run_until_complete(main())
+    print(result)
 
 
 
