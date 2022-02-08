@@ -35,7 +35,7 @@ async def access_coin_spot() -> Dict:
 
     async with aiohttp.ClientSession() as session:
 
-        req_model = CoinSpotReq(url=BASE_URL + BALANCE_URL, )
+        req_model = CoinSpotReq(url=BASE_URL + BALANCE_URL)
         async with session.post(req_model.url, data=req_model.payload, headers=req_model.headers) as response:
             data = await response.json()
             print(data)
