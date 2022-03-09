@@ -10,10 +10,10 @@ Python v3.9.0 or higher
     * activate venv: ```path_to_venv\Scripts\activate```
 
 1. Install requirements: ```pip install -r requirements.txt```
-2. Run program: ```python main.py test```
+2. Run program: ```python main.py calc_position```
 
 ### For additional information:
 - ```python main.py --help```
-- ```python main.py test --help```
+- ```python main.py calc_position --help```
 
 Dependancies listed in requirements.txt

@@ -4,7 +4,6 @@ Module to get data from coinSpot ReadOnly API
 
 import json
 from typing import Dict
-from unittest import result
 from secret import api_key, api_secret
 import aiohttp
 import asyncio
@@ -15,8 +14,7 @@ from itertools import count
 
 BASE_URL = 'https://www.coinspot.com.au/api/ro'
 BALANCE_URL = '/my/balances'
-DEPOSIT_HIST_URL = '/my/deposits'
-WITHDRAW_HIST_URL = '/my/withdrawals'
+TRANSACTION_HIST_URL = '/my/transactions/'
 
 
 class CoinSpotReq:
@@ -47,11 +45,19 @@ def process_balance(data : Dict, result : Dict) -> Dict:
 
     return result
 
+def process_transaction_hist(data : Dict, result: Dict) -> Dict: 
+    """
+    Figure out initial investment for each coin held today
+    """
+
+    pass
+
 def no_process(data, result):
+    print(data)
     pass
 
 def generate_coin_spot_reqs() -> list:
-    return [CoinSpotReq(BASE_URL + BALANCE_URL, process_balance), CoinSpotReq(BASE_URL + DEPOSIT_HIST_URL), CoinSpotReq(BASE_URL + WITHDRAW_HIST_URL)]
+    return [CoinSpotReq(BASE_URL + BALANCE_URL, process_balance), CoinSpotReq(BASE_URL + TRANSACTION_HIST_URL, process_transaction_hist)]
 
 async def main() -> dict:
 
@@ -68,7 +74,7 @@ async def main() -> dict:
 
 def get_coin_spot_data():
     result = asyncio.get_event_loop().run_until_complete(main())
-    print(result)
+    return result
 
 
 
